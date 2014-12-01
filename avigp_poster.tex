@@ -194,21 +194,32 @@ are model-specific.
 %---------------------------------------------------------------
 
 \headerbox{Latent Gaussian Process Models}{name=setting,column=0,below=approach}{
-\textbf{Supervised learning problems:} $\x = \{\x_n\}_{n=1}^N$, $\y = \{\y_n\}_{n=1}^N$
+{$\bullet$ Supervised learning problems:} $\x = \{\x_n\}_{n=1}^N$, $\y = \{\y_n\}_{n=1}^N$
 
 \insertline
-\textbf{Factorisation of GP prior over Q latent functions:}
-\begin{equation}
-f_j \sim \GP(0, \kernel_j(\cdot, \cdot))
-\rightarrow p(\f | \vtheta{0}) = \prod_{j=1}^Q p(\fj | \vtheta{0}) = \prod_{j=1}^Q \Normal(\fj; \vec{0}, \K_j) 
-\end{equation}
+{$\bullet$ Factorisation of \textbf{GP prior} over Q latent functions:}
+%\begin{equation}
+%f_j \sim \GP(0, \kernel_j(\cdot, \cdot))
+%\rightarrow p(\f | \vtheta{0}) = \prod_{j=1}^Q p(\fj | \vtheta{0}) = \prod_{j=1}^Q \Normal(\fj; \vec{0}, \K_j) 
+%\end{equation}
 %\kernel_j
-
-\insertline
-\textbf{Factorisation of conditional likelihood across observations:}
-\begin{equation}
-p(\y | \f, \vtheta{1}) = \prod_{n=1}^N p(\y_n | \fn, \vtheta{1}) 
-\end{equation}
+\vspace{-0.2cm}
+\begin{center}
+	\includegraphics[width=\textwidth]{prior}
+\end{center}
+\vspace{-0.2cm}
+{$\bullet$ Factorisation of \textbf{conditional likelihood} across observations:}
+%\begin{equation}
+%p(\y | \f, \vtheta{1}) = \prod_{n=1}^N p(\y_n | \fn, \vtheta{1}) 
+%\end{equation}
+\vspace{-0.2cm}
+\begin{center}
+	\includegraphics[width=0.7\textwidth]{likelihood}
+\end{center}
+\vspace{-0.2cm}
+\red{What can we model with this framework?} Multi-class classification,
+multi-output regression, Warped GPs, Log Gaussian Cox Processes, and beyond
+$\rightarrow$ only access to `black-box' likelihood is required.
 }
 
 %---------------------------------------------------------------
@@ -216,9 +227,9 @@ p(\y | \f, \vtheta{1}) = \prod_{n=1}^N p(\y_n | \fn, \vtheta{1})
 %---------------------------------------------------------------
 
 \headerbox{Automated  Inference Framework}{name=framework,column=1}{
-\begin{equation}
+\begin{equation*}
 \calL =  \underbrace{\expectation_q [ - \log q(\f | \llambda)] + \expectation_q  [\log p(\f)]}_{-\KL[q(\f | \llambda) || p(\f)]} +\underbrace{\sum_{k=1}^K \pi_k \expectation_{q_k}  [\log p(\y | \f)]}_{\text{ELL}}
-\end{equation}
+\end{equation*}
 }
 
 %---------------------------------------------------------------
