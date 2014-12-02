@@ -174,11 +174,11 @@ are model-specific.
 	\includegraphics[width=0.8\textwidth]{avinewpdf}
 \end{center}
 \vspace{-0.5cm}
-\textbf{Key results:}
+\textbf{Main results:}
 \begin{enumerate}[leftmargin=0.5cm]
  \compresslist
 \item
-	Variational objective (ELBO) and its gradients are approximated efficiently: 
+	Variational objective (ELBO) and its gradients are estimated efficiently: 
 	expectations over \emph{univariate} Gaussians.
 \item
 	Efficient parameterisation of posterior covariances.
@@ -227,18 +227,86 @@ $\rightarrow$ only access to `black-box' likelihood is required.
 %---------------------------------------------------------------
 
 \headerbox{Automated  Inference Framework}{name=framework,column=1}{
+\textbf{Main task:} Approximate `intractable' posterior $p(\f | \y)$
+
+\insertline
+$\bullet$   Find the closest  approximation   $p(\f | \y) \approx q(\f | \llambda)$ such that:
+\begin{equation*}   
+q(\f | \llambda) = \sum_{k=1}^K \pi_k  q_k(\f | \m_k, \S_k ) 
+   =  \sum_{k=1}^K \ \pi_k  \prod_{j=1}^Q  \Normal(\fj; \m_{kj}, \S_{kj}) \text{,} 
+\end{equation*}   
+where  $\llambda = \{ \m_{kj}, \S_{kj} \} $ and 
+ $q_k(\f | \m_k, \S_k)$ is the component $k$ with variational parameters 
+$\m_k =  \{ \m_{kj}\}_{j=1}^{Q}$ and $\S_k = \{\S_{kj} \}_{j=1}^{Q}$. 
+
+\insertline
+\textbf{Key assumption}: \emph{Within each mixture component, the posterior 
+factorises across latent functions.}
+
+\insertline
+$\bullet$ Minimize $\KL[q(\f) || p(\f | \y)]  \rightarrow$ maximize ELBO:
 \begin{equation*}
 \calL =  \underbrace{\expectation_q [ - \log q(\f | \llambda)] + \expectation_q  [\log p(\f)]}_{-\KL[q(\f | \llambda) || p(\f)]} +\underbrace{\sum_{k=1}^K \pi_k \expectation_{q_k}  [\log p(\y | \f)]}_{\text{ELL}}
 \end{equation*}
+%
+We show that irrespective of the likelihood models (black-box):
+\begin{enumerate}[leftmargin=0.5cm]
+ \compresslist
+\item
+	\structure{$\KL$ term} can be bounded using Jensen's inequality: 
+	Computation of exact gradients of GP hyper-parameters.
+\item
+	\structure{Expected log likelihood  (ELL)} term can be estimated efficiently.
+\end{enumerate}
 }
 
+\newcommand{\lamk}{\llambda_{k}}
+\newcommand{\lamkn}{\llambda_{k(n)}}
+\newcommand{\lamki}{\llambda_{k(i)}}
+\newcommand{\efi}{\f_{(i)}}
+\newcommand{\gradkn}{\nabla_{\lamkn} \log q_{k(n)} (\fn | \lamkn)}
+\newcommand{\elln}{\ell_n}
 %---------------------------------------------------------------
 % Bag of features
 %---------------------------------------------------------------
 \headerbox{Expected Log Likelihood Term}{name=ellterm,column=1,below=framework}{
+\newtheorem{theorem1}{Theorem}
+\begin{theorem1}
+The expected log likelihood and its gradients can be estimated using expectations from univariate Gaussian distributions.
+\end{theorem1}
+(a) \structure{ELL:} Exploit the factorisation of the conditional likelihood across observations:
+\vspace{-0.4cm}
+\begin{equation*}
+\expectation_{q_k} [\log p(\y | \f)] = \sum_{n=1}^N \expectation_{q_{k(n)}} [\underbrace{\log p(\y_n | \fn)}_{\elln}] \text{,}
+\label{eq:ell}
+\vspace{-0.2cm}
+\end{equation*}
+where $q_{k(n)} = q_{k(n)}(\fn | \lamkn)$ is the marginal posterior with variational parameters $\lamkn$ that correspond to $\fn$.
+%
+\begin{itemize}[leftmargin=0.5cm]
+ \compresslist
+\item Note that $q_{k}$ is a block-diagonal Gaussian, hence $q_{k(n)}$ is a diagonal Gaussian. 
+\end{itemize}
+(b) \structure{Gradients of ELL:} Use $\nabla_{x}f = f \nabla_{x} \log f, \forall f(x) > 0$:
+\begin{equation*}
+\nabla_{\lamkn}  \expectation_{q_{k(n)}} \elln
+=  \expectation_{q_{k(n)}} \gradkn \elln.
+\label{eq:ellgradients}
+\end{equation*}
+\textbf{Practical consequences:}
+\begin{itemize}[leftmargin=0.5cm]
+\compresslist
+ \item
+ Monte Carlo estimates can be used (or numerical integration)
+%
+\item
+Only  evaluations of the cond.~likelihood (no gradients) are required
+\end{itemize}
 }
-\headerbox{KL Divergence Term}{name=klterm,column=1,below=ellterm}{
-}
+
+
+%\headerbox{KL Divergence Term}{name=klterm,column=1,below=ellterm}{
+%}
 
 
 
@@ -248,7 +316,31 @@ $\rightarrow$ only access to `black-box' likelihood is required.
 % Results
 %---------------------------------------------------------------
 
-\headerbox{Practical Variational Distributions}{name=practical,column=1,below=klterm}{
+\newcommand{\fg}{\structure{FG}}
+\newcommand{\modg}{\structure{MoDG}} 
+\headerbox{Practical Variational Distributions}{name=practical,column=2}{
+Two posterior distribution classes of interest:
+\begin{itemize}[leftmargin=0.5cm]
+\compresslist
+\item \fg: Full Gaussian, i.e.~K=1, full covariance matrix
+%
+\item \modg: Mixture of diagonal Gaussians
+\end{itemize}
+\newtheorem{theorem2}[theorem1]{Theorem}
+\begin{theorem2}
+The posterior covariance matrices can be parameterized linearly in the number 
+of observations.
+\end{theorem2}
+This is trivial for \modg. For \fg, 
+We generalise the result of  \cite{nguyen2013efficient,opper-arch-nc-2009} and show that 
+the optimal posterior covariance setting is: \\
+\begin{equation*}
+\S_j = \big( \K_j^{-1} - 2\mat{\Lambda}_{j}) \big)^{-1} \text{,}
+\end{equation*}
+where $\mat{\Lambda}_{j}$ is diagonal,
+hence requiring  $\calO(QN)$ parameters in total.
+
+\textbf{Practical consequence}: Optimisation is easier, less parameters and correlations.
 }
 
 
@@ -257,7 +349,39 @@ $\rightarrow$ only access to `black-box' likelihood is required.
 % Experiments
 %---------------------------------------------------------------
 
-\headerbox{Experiments \& Results}{name=experiments,column=2}{
+\headerbox{Experiments \& Results}{name=experiments,column=2,below=practical}{
+
+\textbf{Binary and Multi-class Classification:} 
+\begin{itemize}[leftmargin=0.5cm]
+\compresslist
+\item[-] Logistic sigmoid and softmax likelihoods
+\end{itemize}
+%
+\begin{tabular}{ccc}
+\includegraphics[width=0.3\linewidth]{figures/classfication-errors.eps}  &
+\includegraphics[width=0.3\linewidth]{figures/breast-nlpd.eps} &
+\includegraphics[width=0.3\linewidth]{figures/usps-nlpd.eps} 
+\end{tabular}
+\structure{\emph{ Comparable performance to hard-coded methods.}}
+
+\insertline 
+\textbf{Log Gaussian Cox process:}
+\begin{itemize}[leftmargin=0.5cm]
+\compresslist
+\item[-] Count data: 
+$p(y_n | f_n) = \frac{\lambda_n^{y_n} \exp(-\lambda_n)}{y_n!},$ where $\lambda_n = \exp(f_n + m)$ 
+\item[-] Coal-mining disasters dataset 
+\end{itemize}
+\begin{tabular}{ccc}
+\includegraphics[width=0.3\linewidth]{figures/loggcp-intensity.eps} &
+\includegraphics[width=0.3\linewidth]{figures/loggcp.eps} &
+\includegraphics[width=0.3\linewidth]{figures/loggcp-time.eps}
+\end{tabular}
+\structure{\emph{ Same performance as sampling, orders of magnitude faster.}}
+
+\insertline
+Similar results on regression and Warped GPs experiments.
+
 
 }
 
@@ -266,11 +390,12 @@ $\rightarrow$ only access to `black-box' likelihood is required.
   
 
 %
-\headerbox{References}{name=bibliography,column=1, below=practical,span=2}{
-{%\tiny
-\renewcommand{\refname}{\vspace{-0.9em}}
-\bibliographystyle{unsrt}
-\bibliography{references,mlreferences}
+\headerbox{References}{name=bibliography,column=2, below=experiments}{
+{
+\tiny
+\renewcommand{\refname}{\vspace{-0.5em}}
+\bibliographystyle{IEEEtran}
+\bibliography{references}
 %\end{spacing}
 }
 }
